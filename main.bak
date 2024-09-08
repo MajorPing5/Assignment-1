@@ -1,0 +1,73 @@
+#lang racket
+
+;; Helper function: Insertion sort for small lists of size <= 5
+(define (insertion-sort lst)
+  (if (null? lst)
+      '()
+      (let insert ((x (car lst))
+                   (sorted (insertion-sort (cdr lst))))
+        (if (null? sorted)
+            (list x)
+            (if (<= x (car sorted))
+                (cons x sorted)
+                (cons (car sorted) (insert x (cdr sorted))))))))
+
+;; Helper function: Check if the list has at least 5 elements
+(define (has-five-elements? lst)
+  (and (not (null? lst))
+       (not (null? (cdr lst)))
+       (not (null? (cddr lst)))
+       (not (null? (cdddr lst)))
+       (not (null? (cddddr lst)))))
+
+;; Helper function: Find the median of a list of up to 5 elements
+(define (find-median lst)
+  (let ((sorted (insertion-sort lst)))
+    (cond
+      [(null? sorted) '()]
+      [(null? (cdr sorted)) (car sorted)]
+      [(null? (cdr (cdr sorted))) (car (cdr sorted))]
+      [(null? (cdr (cdr (cdr sorted)))) (car (cdr (cdr sorted)))]
+      [(null? (cdr (cdr (cdr (cdr sorted))))) (car (cdr (cdr (cdr sorted))))]
+      [else (car (cdr (cdr sorted)))]))) ; For a list of exactly 5 elements
+
+;; Helper function: Split a list into groups of up to 5 elements
+(define (group-into-fives lst)
+  (if (null? lst)
+      '()
+      (cons (take lst 5)
+            (group-into-fives (drop lst 5)))))
+
+;; Helper function: Median of Medians pivot selection without using length
+(define (median-of-medians lst)
+  (let* ((groups (group-into-fives lst))
+         (medians (map find-median groups)))
+    (if (not (has-five-elements? medians))
+        (find-median medians)
+        (median-of-medians medians))))
+
+;; Helper function: Partition the list around the pivot
+(define (partition lst pivot)
+  (let loop ((lst lst)
+             (less '())
+             (greater '()))
+    (cond
+      [(null? lst) (values less greater)]
+      [(<= (car lst) pivot) (loop (cdr lst) (cons (car lst) less) greater)]
+      [else (loop (cdr lst) less (cons (car lst) greater))])))
+
+;; Quicksort using Median-of-Medians, avoiding the use of `length`
+;; Quicksort using Median-of-Medians, avoiding the use of `length`
+(define (quicksort lst)
+  (if (not (has-five-elements? lst))
+      (insertion-sort lst)
+      (let* ((pivot (median-of-medians lst)))
+        (call-with-values
+          (lambda () (partition lst pivot))
+          (lambda (less greater)
+            (append (quicksort less)
+                    (list pivot)
+                    (quicksort greater)))))))
+
+;; Example usage
+(quicksort '(3 6 8 10 1 2 1 7 5 4))
